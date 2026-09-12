@@ -281,11 +281,14 @@ if (Get-Command winget -ErrorAction SilentlyContinue) {
         }
     }
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        Write-Warn 'winget не установился (на 1809 ему обычно не хватает Microsoft.UI.Xaml).'
+        Write-Warn 'winget не установился.'
+        Write-Host '  Обычная причина на 1809 — 0x80073CF3: свежему App Installer нужен' -ForegroundColor Yellow
+        Write-Host '  пакет Microsoft.WindowsAppRuntime, которого нет в системе.' -ForegroundColor Yellow
         Write-Host '  Это НЕ критично: и PowerShell 7, и Claude ниже ставятся без winget.' -ForegroundColor Yellow
-        Write-Host '  Если winget всё же нужен — возьмите DesktopAppInstaller_Dependencies.zip' -ForegroundColor Yellow
-        Write-Host '  со страницы https://github.com/microsoft/winget-cli/releases и поставьте' -ForegroundColor Yellow
-        Write-Host '  зависимости через Add-AppxPackage перед .msixbundle.' -ForegroundColor Yellow
+        Write-Host '  Если winget всё же нужен — со страницы релиза' -ForegroundColor Yellow
+        Write-Host '  https://github.com/microsoft/winget-cli/releases возьмите' -ForegroundColor Yellow
+        Write-Host '  DesktopAppInstaller_Dependencies.zip той же версии, распакуйте папку x64' -ForegroundColor Yellow
+        Write-Host '  и поставьте все пакеты из неё через Add-AppxPackage ДО .msixbundle.' -ForegroundColor Yellow
     }
 } else {
     Write-Warn "winget требует сборку $MinBuild или новее — пропускаю."
