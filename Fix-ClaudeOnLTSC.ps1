@@ -133,7 +133,11 @@ try {
     Remove-Item $sst -ErrorAction SilentlyContinue
     certutil.exe -generateSSTFromWU $sst | Out-Null
     if (Test-Path $sst) {
-        $count = @(Get-ChildItem $sst -ErrorAction SilentlyContinue).Count
+        $count = try {
+            $col = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
+            $col.Import($sst)
+            $col.Count
+        } catch { 'н/д' }
         if (Get-Command Import-Certificate -ErrorAction SilentlyContinue) {
             Import-Certificate -FilePath $sst -CertStoreLocation Cert:\LocalMachine\Root -ErrorAction SilentlyContinue | Out-Null
         } else {
