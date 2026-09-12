@@ -400,6 +400,20 @@ if ($SkipClaudeInstall) {
         $claudeExe = Join-Path $env:USERPROFILE '.local\bin\claude.exe'
         if (Test-Path $claudeExe) {
             Write-Ok "Claude Code установлен: $(& $claudeExe --version)"
+
+            # Установщик часто не прописывает каталог в PATH и просто предупреждает
+            # об этом. Дописываем сами, в пользовательскую переменную (без админа).
+            $binDir = Split-Path $claudeExe -Parent
+            $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+            if ($userPath -notlike "*$binDir*") {
+                $newPath = if ([string]::IsNullOrWhiteSpace($userPath)) { $binDir }
+                           else { "$userPath;$binDir" }
+                [Environment]::SetEnvironmentVariable('Path', $newPath, 'User')
+                $env:Path = "$env:Path;$binDir"
+                Write-Ok "Каталог добавлен в PATH пользователя: $binDir"
+            } else {
+                Write-Ok 'Каталог уже прописан в PATH.'
+            }
         } else {
             Write-Warn 'Установщик отработал, но claude.exe не найден в %USERPROFILE%\.local\bin.'
         }
@@ -414,8 +428,21 @@ Write-Step 8 'Итог'
 $cv2 = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion'
 Write-Host "  Сборка ОС      : $($cv2.CurrentBuildNumber).$($cv2.UBR) (было $build.$ubr)"
 
+# MSI и установщик Claude правят PATH в реестре, но уже запущенный процесс
+# продолжает видеть старую копию переменной. Перечитываем её из реестра,
+# иначе свежеустановленный pwsh не находится и сводка врёт.
+$env:Path = @(
+    [Environment]::GetEnvironmentVariable('Path', 'Machine'),
+    [Environment]::GetEnvironmentVariable('Path', 'User')
+) -join ';'
+
 $pwshNow = Get-Command pwsh -ErrorAction SilentlyContinue
-if ($pwshNow) { Write-Host "  PowerShell 7   : $($pwshNow.Version) -> запускать командой pwsh" }
+if (-not $pwshNow) {
+    # Запасная проверка по стандартному пути установки MSI
+    $cand = Join-Path $env:ProgramFiles 'PowerShell\7\pwsh.exe'
+    if (Test-Path $cand) { $pwshNow = Get-Item $cand }
+}
+if ($pwshNow) { Write-Host "  PowerShell 7   : $($pwshNow.VersionInfo.ProductVersion) -> запускать командой pwsh" }
 else          { Write-Host '  PowerShell 7   : не установлен' }
 
 if (Test-Path (Join-Path $env:USERPROFILE '.local\bin\claude.exe')) {
