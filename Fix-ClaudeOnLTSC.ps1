@@ -216,14 +216,21 @@ if ($SkipWindowsUpdate) {
     } catch {
         Write-Warn "PSWindowsUpdate не отработал: $($_.Exception.Message)"
         Write-Host @"
-  Ручной запасной вариант (когда Windows Update заблокирован политикой домена):
-    1. Узнайте свою сборку выше ($build).
-    2. Откройте https://catalog.update.microsoft.com и найдите
-       "Cumulative Update for Windows 10 Version <ваша версия> x64".
-    3. Скачайте .msu и поставьте из CMD:
-         wusa.exe C:\path\to\update.msu /quiet /norestart
-       либо, если wusa отказывает:
-         dism.exe /Online /Add-Package /PackagePath:C:\path\to\update.msu /Quiet /NoRestart
+  Ручной запасной вариант (когда Windows Update заблокирован политикой или
+  службой). Накопительные обновления кумулятивны: ОДИН свежий пакет доведёт
+  систему до актуальной ревизии, ставить всё подряд не нужно.
+
+    1. Текущая сборка: $build.$ubr
+    2. Каталог: https://catalog.update.microsoft.com
+    3. Сначала самый свежий Servicing Stack Update для вашей версии.
+       Для 1809 standalone SSU перестали выпускать в августе 2021 —
+       последний KB5005112, он и нужен.
+    4. Затем самый свежий Cumulative Update. Актуальный номер смотрите в
+       истории обновлений: https://support.microsoft.com/help/4464619
+    5. Ставьте через DISM (надёжнее wusa на комбинированных пакетах):
+         dism.exe /Online /Add-Package /PackagePath:"C:\path\to\update.msu" /NoRestart
+       Без ключа /Quiet виден прогресс. После LCU нужна перезагрузка,
+       этап "Работа с обновлениями" может занять полчаса и дольше.
 "@ -ForegroundColor Yellow
     }
 }
